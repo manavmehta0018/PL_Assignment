@@ -1,0 +1,73 @@
+%{
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+using namespace std;
+
+int yylex();
+extern int yylineno;
+
+int yyerror(const char *p)
+{
+   cerr << "syntax error on line " << yylineno << endl;
+   exit(1);
+}
+%}
+
+%token PRINT IF THEN GOTO INPUT LET GOSUB RETURN CLEAR LIST RUN END
+%token RELOP EQUALS PLUMIN MULDIV
+%token VAR DIGIT STRING
+%token COMMA LPAREN RPAREN CR
+
+%start program
+
+%%
+
+program : ( line )+
+        ;
+
+line : number statement CR
+     | statement CR
+     ;
+
+statement : PRINT expr-list
+          | IF expression ( RELOP || EQUALS ) expression THEN statement
+          | GOTO expression
+          | INPUT var-list
+          | LET VAR EQUALS expression
+          | GOSUB expression
+          | RETURN
+          | CLEAR
+          | LIST
+          | RUN
+          | END
+          ;
+
+expr-list : ( STRING || expression ) < COMMA ( STRING || expression ) >
+          ;
+
+var-list : VAR ( COMMA VAR )*
+         ;
+
+expression : [ PLUMIN ] term ( PLUMIN term )*
+           ;
+
+term : factor < MULDIV factor >
+     ;
+
+factor : VAR
+       | number
+       | LPAREN expression RPAREN
+       ;
+
+number : DIGIT+
+       ;
+
+%%
+
+int main()
+{
+   yyparse();
+   cout << "valid tiny basic program" << endl;
+   return 0;
+}
